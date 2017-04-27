@@ -7,95 +7,97 @@ import tty
 import pigpio
 import time
 import datetime
+import thread
 
 RED_PIN   = 22
 GREEN_PIN = 23
 BLUE_PIN  = 24
 
+RESPONSE_STATUS = "ERROR"
+
+pi = pigpio.pi()
+
+def checkStatus():
+	global RESPONSE_STATUS
+	START_TIME = time.time()
+	CHECK_TIME = 0;
+	time.sleep(5)
+	while True:
+		if (time.time() - START_TIME) > CHECK_TIME:
+			response = requests.get("http://buildstatuscapone.herokuapp.com/status")
+			RESPONSE_STATUS = response.text
+			print "Response Recieved: ", RESPONSE_STATUS, "Current Time: ", (time.time())
+			START_TIME = time.time()
+			CHECK_TIME = 60
+
 sys.stdout = open("stdout.txt", "w")
 def setLights(pin, brightness):
-	#text_file.write("PIN %s %s" % pin % brightness)
+	text_file.write("PIN %s %s" % pin % brightness)
+	print "Pin: ", pin, " Brightness: ", brightness
 	pi.set_PWM_dutycycle(pin, brightness)
 
-def blinkGreen():
+def showBuildProgress():
 	for x in range (0, 255):
-		time.sleep(0.02)
-		setLights(GREEN_PIN, 255)
-		time.sleep(0.5)
-		setLights(GREEN_PIN, 0)
-	
-def blinkBlue():
-	setLights(GREEN_PIN, 0)
-	setLights(RED_PIN, 0)
+		time.sleep(0.1)
+		setLights(GREEN_PIN, x)
+		setLights(BLUE_PIN, x)
+		setLights(RED_PIN, 0)
+		print "Showing IN_PROGRESS with brightness", x
+	for x in range (255, 1, -1):
+		time.sleep(0.1)
+		setLights(GREEN_PIN, x)
+		setLights(BLUE_PIN, x)
+		setLights(RED_PIN, 0)
+		print "Showing IN_PROGRESS with brightness", x
+
+
+def showBuildSuccess():
+	setLights(GREEN_PIN, 255)
 	setLights(BLUE_PIN, 255)
-
-
-def blinkRed():
-	setLights(GREEN_PIN, 0)
 	setLights(RED_PIN, 255)
-	setLights(BLUE_PIN, 0)
 
+def showBuildFailure():
+	for x in range (0, 255):
+		time.sleep(0.2)
+		setLights(GREEN_PIN, 0)
+		setLights(BLUE_PIN, x)
+		setLights(RED_PIN, x)
+		print "Showing FAIL with brightness", x
+	for x in range (255, 1, -1):
+		time.sleep(0.2)
+		setLights(GREEN_PIN, 0)
+		setLights(BLUE_PIN, x)
+		setLights(RED_PIN, x)
+		print "Showing FAIL with brightness", x
 
 def turnOff():
 	setLights(GREEN_PIN,0)
 	setLights(RED_PIN,0)
 	setLights(BLUE_PIN,0)
 
+
+print "Initializing the request process"
+thread.start_new_thread(checkStatus, ())
+
 while True:
-
-	response = requests.get("http://buildstatuscapone.herokuapp.com/status")
-	pi = pigpio.pi()
-	print 
-        print(" %s -- %s  " % (response.text, datetime.datetime.now()))
-
-        sys.stdout.flush()
-	if response.text == '"IN_PROGRESS"':
-		
+	print "RESPONSE_STATUS: ", RESPONSE_STATUS
+	if RESPONSE_STATUS == '"IN_PROGRESS"':
 		print "HEY, IN_PROGRESS"
+		showBuildProgress()
 
-		for i in range(0,3):
-
-			for i in range(0,5):
-				for i in range(0,101):
-					setLights(BLUE_PIN, i)
-					setLights(GREEN_PIN, i)	
-					time.sleep(0.002)
-
-				for i in range(100,-1, -1):
-					setLights(GREEN_PIN, i)
-					setLights(BLUE_PIN, i)	
-					time.sleep(0.002)
-				time.sleep(1)
-
-				
-			print "IN_PROGRESS"
-			
-	
-	if response.text == '"SUCCESS"':
+	if RESPONSE_STATUS == '"SUCCESS"':
 		print "HEY, SUCCESS"
-		
-		setLights(GREEN_PIN, 255)
-		setLights(RED_PIN, 0)
-		setLights(BLUE_PIN, 255)
-		time.sleep(10)
-		print "SUCCESS"
+		showBuildSuccess()
 
-	if response.text == '"FAIL"':
+	if RESPONSE_STATUS == '"FAIL"':
 		print "HEY, FAILED"
 		turnOff()
-		for i in range(0,5):
+		showBuildFailure()
 
-			setLights(RED_PIN, 255)
-			setLights(GREEN_PIN, 100)
-			time.sleep(3)
-			
-			for a in range(100,-1, -1):
-				setLights(RED_PIN, a)
-				setLights(GREEN_PIN, i)	
-				time.sleep(0.01)
+	if RESPONSE_STATUS == 'ERROR':
+		print "NO RESPONSE, YET"
+		turnOff()
 
-			print "FAILED"
-			time.sleep(0.3)
-
+	time.sleep(10)
 	print "END OF LOOP"
-
+	sys.stdout.flush()
