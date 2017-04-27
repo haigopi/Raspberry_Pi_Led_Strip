@@ -8,7 +8,7 @@ import pigpio
 import time
 import datetime
 import thread
-
+#6, 15, 16, 18
 RED_PIN   = 22
 GREEN_PIN = 23
 BLUE_PIN  = 24
@@ -36,19 +36,18 @@ def setLights(pin, brightness):
 	pi.set_PWM_dutycycle(pin, brightness)
 
 def showBuildProgress():
-	for x in range (0, 255):
-		time.sleep(0.1)
+	for x in range (0, 255, 20):
+		time.sleep(0.5)
 		setLights(GREEN_PIN, x)
 		setLights(BLUE_PIN, x)
 		setLights(RED_PIN, 0)
 		#print "Showing IN_PROGRESS with brightness", x
-	for x in range (255, 1, -1):
-		time.sleep(0.1)
+	for x in range (255, 1, -20):
+		time.sleep(0.5)
 		setLights(GREEN_PIN, x)
 		setLights(BLUE_PIN, x)
 		setLights(RED_PIN, 0)
 		#print "Showing IN_PROGRESS with brightness", x
-
 
 def showBuildSuccess():
 	setLights(GREEN_PIN, 255)
@@ -56,14 +55,14 @@ def showBuildSuccess():
 	setLights(RED_PIN, 255)
 
 def showBuildFailure():
-	for x in range (0, 255):
-		time.sleep(0.2)
+	for x in range (0, 255, 20):
+		time.sleep(0.5)
 		setLights(GREEN_PIN, 0)
 		setLights(BLUE_PIN, x)
 		setLights(RED_PIN, x)
 		#print "Showing FAIL with brightness", x
 	for x in range (255, 1, -1):
-		time.sleep(0.2)
+		time.sleep(0.5)
 		setLights(GREEN_PIN, 0)
 		setLights(BLUE_PIN, x)
 		setLights(RED_PIN, x)
@@ -74,27 +73,22 @@ def turnOff():
 	setLights(RED_PIN,0)
 	setLights(BLUE_PIN,0)
 
-
 print "Initializing the request process"
 thread.start_new_thread(checkStatus, ())
 
 while True:
-	print "RESPONSE_STATUS: ", RESPONSE_STATUS
+	print "USING RESPONSE_STATUS: ", RESPONSE_STATUS
 	if RESPONSE_STATUS == '"IN_PROGRESS"':
-		print "HEY, IN_PROGRESS"
 		showBuildProgress()
 
 	if RESPONSE_STATUS == '"SUCCESS"':
-		print "HEY, SUCCESS"
 		showBuildSuccess()
 
 	if RESPONSE_STATUS == '"FAIL"':
-		print "HEY, FAILED"
 		turnOff()
 		showBuildFailure()
 
 	if RESPONSE_STATUS == 'ERROR':
-		print "NO RESPONSE, YET"
 		turnOff()
 
 	time.sleep(10)
