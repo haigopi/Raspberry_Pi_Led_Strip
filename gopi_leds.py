@@ -30,7 +30,6 @@ def checkStatus():
 			START_TIME = time.time()
 			CHECK_TIME = 60
 
-#sys.stdout = open("stdout.txt", "w")
 def setLights(pin, brightness):
 	#print "Pin: ", pin, " Brightness: ", brightness
 	pi.set_PWM_dutycycle(pin, brightness)
@@ -51,7 +50,7 @@ def showBuildSuccess():
 	sleep(15)		
 
 def sleep(x):
-	print "Sleeping for :", x, "Seconds. Current Time: ", time.strftime("%c")
+	print "Sleeping for :", x, "Seconds. Current Time: ", time.strftime("%c"), RESPONSE_STATUS
 	time.sleep(x)		
 
 def showBuildFailure():
@@ -86,6 +85,4 @@ while True:
 	if RESPONSE_STATUS == 'ERROR':
 		turnOff()
 
-	#time.sleep(1)
 	print "END OF LOOP"
-	#sys.stdout.flush()
