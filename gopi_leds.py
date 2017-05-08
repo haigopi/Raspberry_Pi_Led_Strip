@@ -72,7 +72,7 @@ print "Initializing the request process"
 thread.start_new_thread(checkStatus, ())
 
 while True:
-	print "USING RESPONSE_STATUS: ", RESPONSE_STATUS
+	#print "USING RESPONSE_STATUS: ", RESPONSE_STATUS
 	if RESPONSE_STATUS == '"IN_PROGRESS"':
 		showBuildProgress()
 
